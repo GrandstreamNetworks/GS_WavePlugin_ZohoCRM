@@ -1,0 +1,11 @@
+{
+  "name": "ZohoCRM",
+  "version": "1.0.0.5",
+  "description": "Zoho CRM is a cloud customer relationship management system that centrally manages customer information. Integration with the Wave app allows users to obtain customer information from Zoho CRM, allowing the strengthening of relationships between companies and customers and improvement of service.",
+  "icon": "/zoho_logo.png",
+  "permissions": [
+    "call.listen",
+    "call.dial"
+  ],
+  "plugin_type": "background"
+}
