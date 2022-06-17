@@ -250,7 +250,7 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
                     </div>
                 </div>
             </div>
-            {!loginState && <Footer url='' message={formatMessage({ id: 'login.user.guide' })}/>}
+            {!loginState && <Footer url='https://documentation.grandstream.com/knowledge-base/wave-crm-add-ins/#overview' message={formatMessage({ id: 'login.user.guide' })}/>}
             {loginState && <Footer url='https://www.zoho.com/crm/developer/docs/api/v2/api-limits.html'
                                    message={formatMessage({ id: 'login.learn.package' })}/>}
         </>

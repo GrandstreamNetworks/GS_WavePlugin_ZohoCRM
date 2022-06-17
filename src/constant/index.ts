@@ -1,17 +1,17 @@
 const ZOHO_CONFIG = {
     client_id: {
-        US: '1004.7HQ3414ZSGA0MBRMXBYBC3ARYT18ZX',
-        CN: '1004.1Q8J7OG20P9FI6WIBZTBCYX1A85C3H',
-        EU: '1004.7HQ3414ZSGA0MBRMXBYBC3ARYT18ZX',
-        IN: '1004.7HQ3414ZSGA0MBRMXBYBC3ARYT18ZX',
-        AU: '1004.7HQ3414ZSGA0MBRMXBYBC3ARYT18ZX',
+        US: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
+        CN: '1004.OGQ8QSHDINMK0XFEH3LOSS0C9WW6KI',
+        EU: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
+        IN: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
+        AU: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
     },
     client_secret: {
-        US: 'de60c5d949b42f113399c2be10bf0f4d58500c5f15',
-        CN: 'b2e9dd305c66236f4774993ca2faf3d0031fc0ceec',
-        EU: 'de60c5d949b42f113399c2be10bf0f4d58500c5f15',
-        IN: 'de60c5d949b42f113399c2be10bf0f4d58500c5f15',
-        AU: 'de60c5d949b42f113399c2be10bf0f4d58500c5f15',
+        US: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
+        CN: '635fd7aac6c4fa82396ce0032c11fa8ad4062c9e7e',
+        EU: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
+        IN: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
+        AU: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
     },
     scope: 'ZohoCRM.modules.ALL,ZohoCRM.settings.ALL,ZohoCRM.users.ALL',
 }
@@ -117,9 +117,9 @@ const WAVE_CALL_TYPE = {
 
 const DATE_FORMAT = {
     format_1: 'YYYY/MM/DD',
-    format_2: 'YYYY/MM/DD hh/mm/ss',
-    format_3: 'YYYY-MM-DD hh-mm-ss',
-    format_4: 'YYYY-MM-DDThh:mm:ss+ssK',
+    format_2: 'YYYY/MM/DD HH/mm/ss',
+    format_3: 'YYYY-MM-DD HH-mm-ss',
+    format_4: 'YYYY-MM-DDTHH:mm:ss+ssK',
 };
 
 const MODULES = {

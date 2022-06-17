@@ -145,7 +145,6 @@ const HomePage: React.FC<HomeProps> = (props) => {
             pluginSDK.displayNotification({
                 notificationBody: getNotificationBody(body),
             })
-
         })
     }
 
@@ -169,8 +168,10 @@ const HomePage: React.FC<HomeProps> = (props) => {
             console.log('onRejectP2PCall', callType, callNum);
             uploadCallInfo(callNum, 0, 0, WAVE_CALL_TYPE.in);
             if (callNum === callNumber.current) {
-                // @ts-ignore
-                pluginSDK.hideNotification();
+                setTimeout(() => {
+                    // @ts-ignore
+                    pluginSDK.hideNotification();
+                }, 1000)
             }
         });
 
@@ -179,8 +180,10 @@ const HomePage: React.FC<HomeProps> = (props) => {
             console.log('p2PCallCanceled', callType, callNum);
             uploadCallInfo(callNum, 0, 0, WAVE_CALL_TYPE.miss);
             if (callNum === callNumber.current) {
-                // @ts-ignore
-                pluginSDK.hideNotification();
+                setTimeout(() => {
+                    // @ts-ignore
+                    pluginSDK.hideNotification();
+                }, 1000)
             }
         })
 
@@ -191,8 +194,10 @@ const HomePage: React.FC<HomeProps> = (props) => {
             callDirection = callDirection === 'in' ? WAVE_CALL_TYPE.in : WAVE_CALL_TYPE.out;
             uploadCallInfo(callNum, callStartTimeStamp ?? 0, callEndTimeStamp ?? 0, callDirection);
             if (callNum === callNumber.current) {
-                // @ts-ignore
-                pluginSDK.hideNotification();
+                setTimeout(() => {
+                    // @ts-ignore
+                    pluginSDK.hideNotification();
+                }, 1000)
             }
         });
 
