@@ -1,11 +1,10 @@
 import { stringify } from 'qs';
 import { get } from 'lodash';
 import request from '../utils/request';
-import { SESSION_STORAGE_KEY, ZOHO_HOST } from '../constant';
+import { SESSION_STORAGE_KEY, ZOHO_HOST } from '@/constant';
 
 /**
  * 获取联系人列表
- * @param params
  * @returns
  */
 export function getUser() {

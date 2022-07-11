@@ -7,7 +7,7 @@ export interface HomeModelState {
 }
 
 export interface HomeModelType {
-    namespace: string
+    namespace: 'home',
     state: HomeModelState
     effects: {
         getContact: Effect

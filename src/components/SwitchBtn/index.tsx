@@ -4,23 +4,21 @@ import { connect, GlobalModelState, Dispatch } from 'umi';
 import styles from './index.less'
 
 interface Props {
-    userConfig: LooseObject
     connectState: string
-    saveUserConfig: (obj: LooseObject) => void
+    uploadCall: boolean
+    uploadCallChange: (obj: boolean) => void
 }
 
-const IndexPage: React.FC<Props> = ({ userConfig, saveUserConfig, connectState }) => {
+const IndexPage: React.FC<Props> = ({ uploadCall, uploadCallChange, connectState }) => {
 
     const onSwitchChange = (checked: boolean) => {
-        const config = JSON.parse(JSON.stringify(userConfig));
-        config.uploadCall = checked;
-        saveUserConfig(config)
+        uploadCallChange(checked);
     }
 
     return (
         <div className={styles.switch}>
             <Switch
-                checked={userConfig.uploadCall}
+                checked={uploadCall}
                 onChange={onSwitchChange}
                 disabled={connectState !== 'SUCCESS'} />
         </div>
@@ -29,14 +27,14 @@ const IndexPage: React.FC<Props> = ({ userConfig, saveUserConfig, connectState }
 
 export default connect(
     ({ global }: { global: GlobalModelState }) => ({
-        userConfig: global.userConfig,
+        uploadCall: global.uploadCall,
         connectState: global.connectState,
     }),
     (dispatch: Dispatch) => ({
-        saveUserConfig: (payload: LooseObject) =>
+        uploadCallChange: (payload: boolean) =>
             dispatch({
-                type: 'global/saveUserConfig',
+                type: 'global/uploadCallChange',
                 payload,
-            })
+            }),
     })
 )(IndexPage);

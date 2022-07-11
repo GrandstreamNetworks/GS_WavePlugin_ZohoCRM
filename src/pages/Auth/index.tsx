@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Form, Image, Select, Checkbox } from 'antd';
-import { connect, Dispatch, Loading, useIntl, history } from 'umi';
+import { Button, Checkbox, Form, Image, Select } from 'antd';
+import { connect, Dispatch, history, Loading, useIntl } from 'umi';
 import { get } from 'lodash';
-import { ZOHO_CONFIG, SESSION_STORAGE_KEY, ZOHO_HOST, REQUEST_CODE } from '@/constant';
+import { REQUEST_CODE, SESSION_STORAGE_KEY, ZOHO_CONFIG, ZOHO_HOST } from '@/constant';
 import { CountdownButton, Footer } from '@/components';
 import SelectIcon from '../../asset/login/service-line.svg';
 import DownIcon from '../../asset/login/down.svg';
@@ -16,20 +16,25 @@ interface AuthProps {
     getDeviceToken: (obj: LooseObject) => Promise<LooseObject>;
     getUser: (obj: LooseObject) => Promise<LooseObject>;
     saveUserConfig: (obj: LooseObject) => void;
+    save: (obj: LooseObject) => void;
     loginLoading: boolean | undefined
 }
 
 /**
  * 鉴权页
  *
- * @param {(obj: LooseObject) => Promise<LooseObject>} getDeviceCode 获取Device code
- * @param {(obj: LooseObject) => Promise<LooseObject>} getDeviceToken 获取token
- * @param {(obj: LooseObject) => Promise<LooseObject>} getUser 获取用户信息
- * @param {(obj: LooseObject) => void} saveUserConfig 保存用户信息到Wave
- * @param {boolean | undefined} loginLoading 加载状态
  * @returns React.ReactElement
+ * @param props
  */
-const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser, saveUserConfig, loginLoading }) => {
+const IndexPage: React.FC<AuthProps> = (props) => {
+    const {
+        getDeviceCode,
+        getDeviceToken,
+        getUser,
+        saveUserConfig,
+        save,
+        loginLoading
+    } = props;
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [remember, setRemember] = useState<boolean>(true);
     const [showTime, setShowTime] = useState<boolean>(false);
@@ -37,9 +42,9 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
     const [host, setHost] = useState<string>('');
     const [form] = Form.useForm();
     const code = useRef(null);
-    
+
     const { formatMessage } = useIntl();
-    
+
     /**
      * 自动登录状态更改
      * @param e
@@ -47,7 +52,7 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
     const onCheckChange = (e: { target: { checked: boolean | ((prevState: boolean) => boolean); }; }) => {
         setRemember(e.target.checked);
     };
-    
+
     /**
      * 初始化 errorMessage
      * 关闭异常信息提示
@@ -55,33 +60,34 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
     const onfocus = () => {
         setErrorMessage('');
     };
-    
+
     const closeTime = useCallback(() => {
         setShowTime(false);
     }, []);
-    
+
     const toChangeHost = () => {
         setLoginState(false);
     }
-    
+
     const onSelectChange = (value: string) => {
         setHost(value);
     }
-    
+
     /**
      * 获取用户信息
-     * @param {Object} tokenInfo token信息
+     * @param {Object} userConfig 配置信息
      */
-    const getUserInfo = (tokenInfo: LooseObject) => {
-        getUser(tokenInfo).then(res => {
+    const getUserInfo = (userConfig: LooseObject) => {
+        getUser(userConfig).then(res => {
             if (res?.id) {
                 // 获取token成功，保存token信息
-                saveUserConfig(tokenInfo);
+                saveUserConfig(userConfig);
+                save(userConfig);
                 history.replace({ pathname: '/home' });
             }
         });
     }
-    
+
     /**
      * 获取Device code
      * 发送权限申请，获取用户授权URL
@@ -109,7 +115,7 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
             }
             setLoginState(true);
             const { verification_uri_complete, device_code } = res;
-            
+
             // verification_uri_complete 用户授权URL
             if (verification_uri_complete && device_code) {
                 code.current = device_code;
@@ -117,7 +123,7 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
             }
         });
     }
-    
+
     /**
      * 授权后，获取token 信息
      */
@@ -134,7 +140,8 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
             if (tokenInfo.error) {
                 if (tokenInfo.error === 'access_denied' || tokenInfo.error === 'expired') {
                     setLoginState(false);
-                } else {
+                }
+                else {
                     setShowTime(true);
                 }
                 if (tokenInfo.error !== 'authorization_pending') {
@@ -142,19 +149,24 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
                 }
             }
             if (tokenInfo.access_token) {
-                // 设置自动登录
-                tokenInfo.autoLogin = remember;
-                
-                // 保存用户的host
-                tokenInfo.host = host;
-                
-                // 设置上传通话记录
-                tokenInfo.uploadCall = true;
-                getUserInfo(tokenInfo);
+                const userConfig = {
+                    tokenInfo,
+                    autoLogin: remember, // 自动登录
+                    host,
+                    uploadCall: true, // 上报通话
+                    showConfig: {
+                        first: 'Name',
+                        second: 'Phone',
+                        third: 'None',
+                        forth: 'None',
+                        fifth: 'None',
+                    }
+                };
+                getUserInfo(userConfig);
             }
         })
     }, [host, remember]);
-    
+
     useEffect(() => {
         // 获取保存的信息
         // @ts-ignore
@@ -162,16 +174,16 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
             console.log(errorCode, data);
             if (errorCode === 0 && data) {
                 const userConfig = JSON.parse(data);
-                
+
                 form.setFieldsValue({ host: userConfig.host })
                 setHost(userConfig.host)
                 sessionStorage.setItem(
                     SESSION_STORAGE_KEY.apiHost,
-                    userConfig.api_domain,
+                    userConfig.tokenInfo?.api_domain,
                 );
                 sessionStorage.setItem(
                     SESSION_STORAGE_KEY.token,
-                    userConfig.access_token,
+                    userConfig.tokenInfo?.access_token,
                 );
                 if (userConfig.autoLogin) {
                     getUserInfo(userConfig);
@@ -179,7 +191,7 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
             }
         });
     }, []);
-    
+
     return (
         <>
             {errorMessage && (
@@ -201,7 +213,7 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
                         <Form.Item style={{ marginBottom: 0 }}>
                             <div style={{ marginBottom: '64px' }}>
                                 <div className={styles.selectIcon}>
-                                    <Image src={SelectIcon} preview={false}/>
+                                    <Image src={SelectIcon} preview={false} />
                                 </div>
                                 <Form.Item
                                     name="host"
@@ -215,7 +227,7 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
                                 >
                                     <Select
                                         placeholder={formatMessage({ id: 'login.host' })}
-                                        suffixIcon={<Image src={DownIcon} preview={false}/>}
+                                        suffixIcon={<Image src={DownIcon} preview={false} />}
                                         onChange={onSelectChange}
                                     >
                                         <Option value="US">{ZOHO_HOST.US}</Option>
@@ -238,11 +250,11 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
                     <div className={styles.zohoHost}>
                         <span className={styles.hostSpan}>{get(ZOHO_HOST, host)}</span>
                         <div className={styles.changeHost} onClick={toChangeHost}>
-                            <Image src={Change} preview={false}/>
+                            <Image src={Change} preview={false} />
                             <span>Switch Server</span>
                         </div>
                     </div>
-                    <CountdownButton showTime={showTime} closeTime={closeTime} loginImmediately={loginImmediately}/>
+                    <CountdownButton showTime={showTime} closeTime={closeTime} loginImmediately={loginImmediately} />
                     <div className={styles.remember}>
                         <Checkbox checked={remember} onChange={onCheckChange}>
                             {formatMessage({ id: 'login.remember' })}
@@ -250,9 +262,11 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
                     </div>
                 </div>
             </div>
-            {!loginState && <Footer url='https://documentation.grandstream.com/knowledge-base/wave-crm-add-ins/#overview' message={formatMessage({ id: 'login.user.guide' })}/>}
+            {!loginState &&
+                <Footer url='https://documentation.grandstream.com/knowledge-base/wave-crm-add-ins/#overview'
+                    message={formatMessage({ id: 'login.user.guide' })} />}
             {loginState && <Footer url='https://www.zoho.com/crm/developer/docs/api/v2/api-limits.html'
-                                   message={formatMessage({ id: 'login.learn.package' })}/>}
+                message={formatMessage({ id: 'login.learn.package' })} />}
         </>
     )
 };
@@ -260,7 +274,7 @@ const IndexPage: React.FC<AuthProps> = ({ getDeviceCode, getDeviceToken, getUser
 export default connect(
     ({ loading }: { loading: Loading }) => ({
         loginLoading:
-            loading.effects['global/getDeviceCode'],
+            loading.effects['global/getDeviceCode'] || loading.effects['global/getUser'],
     }),
     (dispatch: Dispatch) => ({
         getDeviceCode: (payload: LooseObject) =>
@@ -283,5 +297,9 @@ export default connect(
                 type: 'global/saveUserConfig',
                 payload,
             }),
+        save: (payload: LooseObject) => dispatch({
+            type: 'global/save',
+            payload
+        })
     }),
 )(IndexPage);

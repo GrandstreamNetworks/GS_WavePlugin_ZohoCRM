@@ -1,19 +1,19 @@
-import React, { useEffect, useRef } from 'react';
-import { connect, Dispatch, GlobalModelState, history, useIntl } from 'umi';
-import { Button, Col, Row } from 'antd';
+import React, { useCallback } from 'react';
+import { connect, Dispatch, GlobalModelState, useIntl } from 'umi';
 import { get } from 'lodash';
 import moment from 'moment';
-import { getNotificationBody } from '@/utils/utils';
-import { ConnectError, ConnectState, Footer, SwitchBtn } from '@/components';
-import { EVENT_KEY, MODULES, WAVE_CALL_TYPE, ZOHO_CRM, ZOHO_CRM_ADDRESS } from '@/constant';
+import { getNotificationBody, getValueByConfig } from '@/utils/utils';
+import { CallAction, ConfigBlock, ConnectError, ConnectState, Footer } from '@/components';
+import { MODULES, ZOHO_CRM, ZOHO_CRM_ADDRESS } from '@/constant';
 import styles from './index.less'
 
 interface HomeProps {
     getContact: (obj: LooseObject) => Promise<LooseObject>
     putCallInfo: (obj: LooseObject) => Promise<LooseObject>
-    logout: (obj: LooseObject) => void
-    saveUserConfig: (obj: LooseObject) => void
-    userConfig: LooseObject
+    uploadCall: boolean
+    tokenInfo: LooseObject
+    showConfig: LooseObject
+    host: string
 }
 
 type Who = {
@@ -41,37 +41,22 @@ const HomePage: React.FC<HomeProps> = (props) => {
     const {
         getContact,
         putCallInfo,
-        logout,
-        saveUserConfig,
-        userConfig,
+        uploadCall,
+        tokenInfo,
+        showConfig,
+        host,
     } = props;
     const { formatMessage } = useIntl();
-
-    const callNumber = useRef(null);
-
-    /**
-     * 登出
-     */
-    const logoutClick = () => {
-        const config = JSON.parse(JSON.stringify(userConfig));
-        config.autoLogin = false;
-        saveUserConfig(config);
-        logout({
-            host: config.host,
-            token: config.refresh_token,
-        });
-        history.replace({ pathname: 'auth' })
-    };
 
     /**
      * 上报通话
      */
-    const uploadCallInfo = (callNum: string, callStartTimeStamp: number, callEndTimeStamp: number, callDirection: string) => {
-        if (!userConfig.uploadCall) {
+    const uploadCallInfo = useCallback((callNum: string, callStartTimeStamp: number, callEndTimeStamp: number, callDirection: string) => {
+        if (!uploadCall) {
             return;
         }
         callNum = callNum.replace(/\b(0+)/gi, '');
-        getContact({ callNum, ...userConfig }).then(contactInfo => {
+        getContact({ callNum, ...tokenInfo, host }).then(contactInfo => {
             if (!contactInfo?.id) {
                 return;
             }
@@ -88,179 +73,139 @@ const HomePage: React.FC<HomeProps> = (props) => {
                 Call_Duration: `${duration_minutes}:${duration_seconds}`,
                 Call_Duration_in_seconds: moment.duration(duration).asSeconds()
             }
-            if (contactInfo?.Module === MODULES.contact) {
-                data.Who_Id = {
-                    id: contactInfo.id,
-                    name: contactInfo.Full_Name,
-                }
-            } else {
-                data.What_Id = {
-                    id: contactInfo.id,
-                    name: contactInfo.Full_Name,
-                }
-            }
+            contactInfo?.Module === MODULES.contact
+                ? data.Who_Id = { id: contactInfo.id, name: contactInfo.Full_Name, }
+                : data.What_Id = { id: contactInfo.id, name: contactInfo.Full_Name, }
+
             const params = {
                 callInfo: {
                     data: [data]
                 },
-                userConfig,
+                tokenInfo,
             };
             putCallInfo(params).then(res => {
                 console.log('putCallInfo:', params, res);
             });
         })
-    }
+    }, [tokenInfo, host, uploadCall])
 
     const getUrl = (contact: LooseObject) => {
-        const zoho_crm_host = get(ZOHO_CRM, userConfig.host);
+        const zoho_crm_host = get(ZOHO_CRM, host);
         return contact?.id ? zoho_crm_host + get(ZOHO_CRM_ADDRESS, contact?.Module) + contact.id : zoho_crm_host + ZOHO_CRM_ADDRESS.create_address;
     }
 
-    const initCallInfo = (callNum: string) => {
+    /**
+     * 通话事件的监听回调方法
+     * 调用getContact 获取联系人信息
+     * 根据showConfig -- 自定义通知展示信息，定义body
+     *
+     * @param callNum 通话号码
+     */
+    const initCallInfo = useCallback((callNum: string) => {
         // callNum 去除前面的0
         callNum = callNum.replace(/\b(0+)/gi, '');
-        getContact({ callNum, ...userConfig, }).then(contact => {
+        getContact({ callNum, ...tokenInfo, host }).then(contact => {
             if (!contact?.displayNotification) {
                 return;
             }
             const url = getUrl(contact);
-            const name = contact?.Full_Name || contact?.Account_Name;
-            const department = contact?.Department;
-            const title = contact?.Title;
-            const job = department && title ? department + '|' + title : department || title;
             const pluginPath = sessionStorage.getItem('pluginPath');
+
+            // body对象，
             const body = {
                 logo: `<div style="margin-bottom: 12px"><img src="${pluginPath}/zoho.svg" alt=""/> ZohoCRM</div>`,
-                info: name ? `<div style="font-weight: bold; text-overflow: ellipsis; white-space:nowrap; overflow: hidden">${name}</div>` : null,
-                PhoneNumber: `<div style="font-weight: bold; text-overflow: ellipsis; white-space:nowrap; overflow: hidden">${callNum}</div>`,
-                title: job ? `<div style="font-weight: bold; text-overflow: ellipsis; white-space:nowrap; overflow: hidden">${job}</div>` : null,
-                action: `<div style="margin-top: 10px;display: flex;justify-content: flex-end;"><button style="background: none; border: none;">
-                             <a href=${url} target="_blank" style="color: #62B0FF">
-                                 ${contact?.id ? formatMessage({ id: 'home.detail' }) : formatMessage({ id: 'home.edit' })}
-                             </a>
-                         </button></div>`
             }
+            if (contact?.id) {
+                // 将showConfig重复的删除
+                const configList = [...new Set(Object.values(showConfig))]
+                console.log(configList);
+                for (const key in configList) {
+                    console.log(configList[key])
+                    if (!configList[key]) {
+                        continue;
+                    }
+
+                    // 取出联系人的信息用于展示
+                    const configValue = getValueByConfig(contact, configList[key]);
+                    console.log(configValue);
+                    if (configList[key] === 'Phone') {
+                        Object.defineProperty(body, `config_${key}`,
+                            {
+                                value: `<div style="font-weight: bold">${callNum}</div>`,
+                                writable: true,
+                                enumerable: true,
+                                configurable: true
+                            });
+                    }
+                    else if (configValue) {
+                        Object.defineProperty(body, `config_${key}`,
+                            {
+                                value: `<div style="font-weight: bold; display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 5;overflow: hidden;">${configValue}</div>`,
+                                writable: true,
+                                enumerable: true,
+                                configurable: true
+                            });
+                    }
+                }
+            }
+            else {
+                Object.defineProperty(body, 'phone', {
+                    value: `<div style="font-weight: bold;">${callNum}</div>`,
+                    writable: true,
+                    enumerable: true,
+                    configurable: true
+                });
+            }
+
+            Object.defineProperty(body, 'action', {
+                value: `<div style="margin-top: 10px;display: flex;justify-content: flex-end;"><button style="background: none; border: none;">
+                                 <a href=${url} target="_blank" style="color: #62B0FF">
+                                     ${contact?.id ? formatMessage({ id: 'home.detail' }) : formatMessage({ id: 'home.edit' })}
+                                 </a>
+                             </button></div>`,
+                writable: true,
+                enumerable: true,
+                configurable: true
+            });
+
             console.log('displayNotification');
+
+            // getNotificationBody自定义的工具类方法，将对象的所有value拼接成富文本。
             // @ts-ignore
             pluginSDK.displayNotification({
                 notificationBody: getNotificationBody(body),
             })
         })
-    }
-
-    useEffect(() => {
-        // @ts-ignore
-        pluginSDK.eventEmitter.on(EVENT_KEY.recvP2PIncomingCall, function ({ callType, callNum }) {
-            console.log('onRecvP2PIncomingCall', callType, callNum);
-            callNumber.current = callNum;
-            initCallInfo(callNum);
-        });
-
-        // @ts-ignore
-        pluginSDK.eventEmitter.on(EVENT_KEY.initP2PCall, function ({ callType, callNum }) {
-            console.log('onInitP2PCall', callType, callNum);
-            callNumber.current = callNum;
-            initCallInfo(callNum);
-        })
-
-        // @ts-ignore
-        pluginSDK.eventEmitter.on(EVENT_KEY.rejectP2PCall, function ({ callType, callNum }) {
-            console.log('onRejectP2PCall', callType, callNum);
-            uploadCallInfo(callNum, 0, 0, WAVE_CALL_TYPE.in);
-            if (callNum === callNumber.current) {
-                setTimeout(() => {
-                    // @ts-ignore
-                    pluginSDK.hideNotification();
-                }, 1000)
-            }
-        });
-
-        // @ts-ignore
-        pluginSDK.eventEmitter.on(EVENT_KEY.p2PCallCanceled, function ({ callType, callNum }) {
-            console.log('p2PCallCanceled', callType, callNum);
-            uploadCallInfo(callNum, 0, 0, WAVE_CALL_TYPE.miss);
-            if (callNum === callNumber.current) {
-                setTimeout(() => {
-                    // @ts-ignore
-                    pluginSDK.hideNotification();
-                }, 1000)
-            }
-        })
-
-        // @ts-ignore
-        pluginSDK.eventEmitter.on(EVENT_KEY.hangupP2PCall, function (data) {
-            let { callType, callNum, callStartTimeStamp, callEndTimeStamp, callDirection } = data
-            console.log('onHangupP2PCall', callType, callNum, callStartTimeStamp, callEndTimeStamp, callDirection);
-            callDirection = callDirection === 'in' ? WAVE_CALL_TYPE.in : WAVE_CALL_TYPE.out;
-            uploadCallInfo(callNum, callStartTimeStamp ?? 0, callEndTimeStamp ?? 0, callDirection);
-            if (callNum === callNumber.current) {
-                setTimeout(() => {
-                    // @ts-ignore
-                    pluginSDK.hideNotification();
-                }, 1000)
-            }
-        });
-
-        return function cleanup() {
-            // @ts-ignore
-            pluginSDK.eventEmitter.off(EVENT_KEY.recvP2PIncomingCall);
-            // @ts-ignore
-            pluginSDK.eventEmitter.off(EVENT_KEY.initP2PCall);
-            // @ts-ignore
-            pluginSDK.eventEmitter.off(EVENT_KEY.rejectP2PCall);
-            // @ts-ignore
-            pluginSDK.eventEmitter.off(EVENT_KEY.p2PCallCanceled);
-            // @ts-ignore
-            pluginSDK.eventEmitter.off(EVENT_KEY.hangupP2PCall);
-        }
-    }, [userConfig])
+    }, [tokenInfo, host, showConfig]);
 
     return (
         <>
+            <CallAction uploadCallInfo={uploadCallInfo} initCallInfo={initCallInfo} />
             <ConnectError />
             <div className={styles.homePage}>
                 <ConnectState />
-                <div className={styles.callConfig}>
-                    <Row>
-                        <Col span={19}>
-                            <span className={styles.spanLabel}>{formatMessage({ id: 'home.Synchronize' })}</span>
-                        </Col>
-                        <Col span={4}>
-                            <SwitchBtn />
-                        </Col>
-                    </Row>
-                </div>
-                <Button onClick={logoutClick}>{formatMessage({ id: 'home.logout' })}</Button>
+                <ConfigBlock />
             </div>
-            <Footer url={get(ZOHO_CRM, userConfig.host)} message={formatMessage({ id: 'home.toCRM' })} />
+            <Footer url={get(ZOHO_CRM, host)} message={formatMessage({ id: 'home.toCRM' })} />
         </>
     )
 }
 
 export default connect(
     ({ global }: { global: GlobalModelState }) => ({
-        userConfig: global.userConfig,
+        uploadCall: global.uploadCall,
+        tokenInfo: global.tokenInfo,
+        host: global.host,
+        showConfig: global.showConfig,
     }),
     (dispatch: Dispatch) => ({
-        getContact: (payload: LooseObject) =>
-            dispatch({
-                type: 'home/getContact',
-                payload,
-            }),
-        putCallInfo: (payload: LooseObject) =>
-            dispatch({
-                type: 'home/putCallInfo',
-                payload
-            }),
-        logout: (payload: LooseObject) =>
-            dispatch({
-                type: 'global/logout',
-                payload,
-            }),
-        saveUserConfig: (payload: LooseObject) =>
-            dispatch({
-                type: 'global/saveUserConfig',
-                payload,
-            }),
+        getContact: (payload: LooseObject) => dispatch({
+            type: 'home/getContact',
+            payload,
+        }),
+        putCallInfo: (payload: LooseObject) => dispatch({
+            type: 'home/putCallInfo',
+            payload
+        }),
     })
 )(HomePage);

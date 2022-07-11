@@ -1,25 +1,29 @@
 import React from 'react';
 import { Button } from 'antd';
 import { ExclamationCircleFilled, LoadingOutlined } from '@ant-design/icons';
-import { connect, useIntl, GlobalModelState, Dispatch } from 'umi';
+import { connect, Dispatch, GlobalModelState, useIntl } from 'umi';
 import { REQUEST_CODE } from '@/constant';
 import styles from './index.less'
 
 interface Props {
     connectState: string
-    userConfig: LooseObject
+    tokenInfo: LooseObject
+    host: string
     getUser: (obj: LooseObject) => void
     save: (obj: LooseObject) => void
 }
 
-const IndexPage: React.FC<Props> = ({ connectState, userConfig, save, getUser }) => {
+const IndexPage: React.FC<Props> = ({ connectState, host, tokenInfo, save, getUser }) => {
     const { formatMessage } = useIntl();
 
     const reConnect = () => {
         save({
             connectState: REQUEST_CODE.reConnect,
         })
-        getUser(userConfig);
+        getUser({
+            ...tokenInfo,
+            host,
+        });
     }
 
     return (
@@ -28,7 +32,7 @@ const IndexPage: React.FC<Props> = ({ connectState, userConfig, save, getUser })
                 <ExclamationCircleFilled style={{ fontSize: '15px', color: '#F54E4E' }} />
                 <span className={styles.connectSpan}>{formatMessage({ id: 'home.connection.exception' })}</span>
                 <Button className={styles.connectButton}
-                    onClick={reConnect}>{formatMessage({ id: 'home.reConnect.btn' })}</Button>
+                        onClick={reConnect}>{formatMessage({ id: 'home.reConnect.btn' })}</Button>
             </div>
             <div className={styles.reConnect} hidden={connectState !== REQUEST_CODE.reConnect}>
                 <LoadingOutlined />
@@ -39,9 +43,10 @@ const IndexPage: React.FC<Props> = ({ connectState, userConfig, save, getUser })
 }
 
 export default connect(
-    ({ global }: { global: GlobalModelState }) => ({
+    ({ global }: {global: GlobalModelState}) => ({
         connectState: global.connectState,
-        userConfig: global.userConfig,
+        tokenInfo: global.tokenInfo,
+        host: global.host
     }),
     (dispatch: Dispatch) => ({
         getUser: (payload: LooseObject) =>

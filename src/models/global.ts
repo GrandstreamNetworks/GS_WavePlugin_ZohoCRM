@@ -1,16 +1,20 @@
 import { get } from 'lodash';
-import { Effect, Reducer } from 'umi';
+import { Effect, history, Reducer } from 'umi';
 import { REQUEST_CODE, SESSION_STORAGE_KEY, ZOHO_CONFIG } from '@/constant';
-import { getToken, getUser, getDeviceCode, getDeviceToken, revokeToken } from '@/services/global';
+import { getDeviceCode, getDeviceToken, getToken, getUser, revokeToken } from '@/services/global';
 
 export interface GlobalModelState {
     user: LooseObject,
     userConfig: LooseObject,
     connectState: string,
+    showConfig: LooseObject,
+    tokenInfo: LooseObject,
+    uploadCall: boolean,
+    host: string,
 }
 
 export interface GlobalModelType {
-    namespace: string
+    namespace: 'global'
     state: GlobalModelState
     effects: {
         getUser: Effect
@@ -18,6 +22,8 @@ export interface GlobalModelType {
         getDeviceCode: Effect
         getDeviceToken: Effect
         saveUserConfig: Effect
+        uploadCallChange: Effect
+        saveShowConfig: Effect
         logout: Effect
     }
     reducers: {
@@ -31,6 +37,10 @@ const GlobalModal: GlobalModelType = {
         user: {},
         userConfig: {},
         connectState: 'SUCCESS',
+        showConfig: {},
+        tokenInfo: {},
+        uploadCall: true,
+        host: '',
     },
 
     effects: {
@@ -42,7 +52,7 @@ const GlobalModal: GlobalModelType = {
                     payload: {
                         host: payload.host,
                         data: {
-                            refresh_token: payload.refresh_token,
+                            refresh_token: get(payload, ['tokenInfo', 'refresh_token']),
                             client_id: get(ZOHO_CONFIG, ['client_id', payload.host]),
                             client_secret: get(ZOHO_CONFIG, ['client_secret', payload.host]),
                             grant_type: 'refresh_token',
@@ -54,13 +64,23 @@ const GlobalModal: GlobalModelType = {
             }
             let connectState = res?.code || 'SUCCESS';
             const user = get(res, 'users[0]') || {};
-            yield put({
-                type: 'save',
-                payload: {
-                    user,
-                    connectState,
-                },
-            });
+            if (user.id) {
+                yield put({
+                    type: 'save',
+                    payload: {
+                        user,
+                        connectState,
+                    },
+                });
+            }
+            else {
+                yield put({
+                    type: 'save',
+                    payload: {
+                        connectState,
+                    },
+                });
+            }
             return user;
         },
 
@@ -90,14 +110,56 @@ const GlobalModal: GlobalModelType = {
             return res || {};
         },
 
-        * logout({ payload }, { call }) {
-            yield call(revokeToken, payload);
+
+        * logout(_, { call, put, select }) {
+            const { userConfig } = yield select((state: any) => state.global);
+            userConfig.autoLogin = false;
+            yield put({
+                type: 'saveUserConfig',
+                payload: userConfig
+            });
+            yield call(revokeToken, {
+                host: userConfig.tokenInfo.host,
+                token: userConfig.tokenInfo.refresh_token,
+            });
+            history.replace({ pathname: 'auth' })
+        },
+
+        * uploadCallChange({ payload }, { put, select }) {
+            const { userConfig } = yield select((state: any) => state.global);
+            userConfig.uploadCall = payload;
+            yield put({
+                type: 'saveUserConfig',
+                payload: userConfig,
+            })
+            yield put({
+                type: 'save',
+                payload: {
+                    uploadCall: payload,
+                }
+            })
+        },
+
+        * saveShowConfig({ payload }, { put, select }) {
+            const { userConfig } = yield select((state: any) => state.global);
+            console.log(userConfig);
+            userConfig.showConfig = payload;
+            yield put({
+                type: 'saveUserConfig',
+                payload: userConfig,
+            })
+            yield put({
+                type: 'save',
+                payload: {
+                    showConfig: payload,
+                }
+            })
         },
 
         * saveUserConfig({ payload }, { put }) {
             console.log(payload);
             // @ts-ignore
-            pluginSDK.userConfig.addUserConfig({ userConfig: JSON.stringify(payload) }, function ({ errorCode }: { errorCode: number }) {
+            pluginSDK.userConfig.addUserConfig({ userConfig: JSON.stringify(payload) }, function ({ errorCode }: {errorCode: number}) {
                 console.log(errorCode);
             })
             yield put({
@@ -114,6 +176,6 @@ const GlobalModal: GlobalModelType = {
             return { ...state, ...action.payload };
         },
     },
-};
+}
 
 export default GlobalModal;

@@ -1,17 +1,17 @@
 const ZOHO_CONFIG = {
     client_id: {
-        US: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
-        CN: '1004.OGQ8QSHDINMK0XFEH3LOSS0C9WW6KI',
-        EU: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
-        IN: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
-        AU: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
+        US: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        CN: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        EU: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        IN: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        AU: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     },
     client_secret: {
-        US: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
-        CN: '635fd7aac6c4fa82396ce0032c11fa8ad4062c9e7e',
-        EU: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
-        IN: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
-        AU: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
+        US: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        CN: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        EU: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        IN: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        AU: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     },
     scope: 'ZohoCRM.modules.ALL,ZohoCRM.settings.ALL,ZohoCRM.users.ALL',
 }
@@ -127,7 +127,44 @@ const MODULES = {
     account: 'Accounts',
     lead: 'Leads',
 };
+
+type CONFIG_SHOW = {
+    None: null | undefined
+    Name: string[],
+    Phone: string,
+    Fax: string,
+    Email: string,
+    Industry: string,
+    Company: string,
+    Title: string[],
+    Department: string,
+    Description: string,
+}
+
+const CONFIG_SHOW: CONFIG_SHOW = {
+    None: undefined,
+    Name: ['Full_Name', 'Account_Name'],
+    Phone: "Phone",
+    Fax: 'Fax',
+    Email: 'Email',
+    Industry: 'Industry',
+    Company: 'Company',
+    Title: ['Title', 'Designation'],
+    Department: 'Department',
+    Description: 'Description',
+}
+
+const NotificationConfig = {
+    first: 'information 1',
+    second: 'information 2',
+    third: 'information 3',
+    forth: 'information 4',
+    fifth: 'information 5'
+}
+
 export {
+    CONFIG_SHOW,
+    NotificationConfig,
     ZOHO_CONFIG,
     ZOHO_CRM,
     ZOHO_CRM_ADDRESS,
