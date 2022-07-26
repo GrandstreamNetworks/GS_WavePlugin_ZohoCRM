@@ -14,6 +14,7 @@ interface HomeProps {
     tokenInfo: LooseObject
     showConfig: LooseObject
     host: string
+    callState: Map<string, boolean>
 }
 
 type Who = {
@@ -45,6 +46,7 @@ const HomePage: React.FC<HomeProps> = (props) => {
         tokenInfo,
         showConfig,
         host,
+        callState,
     } = props;
     const { formatMessage } = useIntl();
 
@@ -105,19 +107,20 @@ const HomePage: React.FC<HomeProps> = (props) => {
         // callNum 去除前面的0
         callNum = callNum.replace(/\b(0+)/gi, '');
         getContact({ callNum, ...tokenInfo, host }).then(contact => {
-            if (!contact?.displayNotification) {
+            console.log("callState", callState);
+            if (!contact?.displayNotification || !callState.get(callNum)) {
                 return;
             }
             const url = getUrl(contact);
             const pluginPath = sessionStorage.getItem('pluginPath');
 
             // body对象，
-            const body = {
+            const body: LooseObject = {
                 logo: `<div style="margin-bottom: 12px"><img src="${pluginPath}/zoho.svg" alt=""/> ZohoCRM</div>`,
             }
             if (contact?.id) {
                 // 将showConfig重复的删除
-                const configList = [...new Set(Object.values(showConfig))]
+                const configList = [...new Set<string>(Object.values(showConfig))]
                 console.log(configList);
                 for (const key in configList) {
                     console.log(configList[key])
@@ -129,44 +132,21 @@ const HomePage: React.FC<HomeProps> = (props) => {
                     const configValue = getValueByConfig(contact, configList[key]);
                     console.log(configValue);
                     if (configList[key] === 'Phone') {
-                        Object.defineProperty(body, `config_${key}`,
-                            {
-                                value: `<div style="font-weight: bold">${callNum}</div>`,
-                                writable: true,
-                                enumerable: true,
-                                configurable: true
-                            });
+                        body[`config_${key}`] = `<div style="font-weight: bold">${callNum}</div>`
                     }
                     else if (configValue) {
-                        Object.defineProperty(body, `config_${key}`,
-                            {
-                                value: `<div style="font-weight: bold; display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 5;overflow: hidden;">${configValue}</div>`,
-                                writable: true,
-                                enumerable: true,
-                                configurable: true
-                            });
+                        body[`config_${key}`] = `<div style="font-weight: bold; display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 5;overflow: hidden;word-break: break-all;text-overflow: ellipsis;">${configValue}</div>`
                     }
                 }
             }
             else {
-                Object.defineProperty(body, 'phone', {
-                    value: `<div style="font-weight: bold;">${callNum}</div>`,
-                    writable: true,
-                    enumerable: true,
-                    configurable: true
-                });
+                body.phone = `<div style="font-weight: bold;">${callNum}</div>`
             }
-
-            Object.defineProperty(body, 'action', {
-                value: `<div style="margin-top: 10px;display: flex;justify-content: flex-end;"><button style="background: none; border: none;">
-                                 <a href=${url} target="_blank" style="color: #62B0FF">
-                                     ${contact?.id ? formatMessage({ id: 'home.detail' }) : formatMessage({ id: 'home.edit' })}
-                                 </a>
-                             </button></div>`,
-                writable: true,
-                enumerable: true,
-                configurable: true
-            });
+            body.action = `<div style="margin-top: 10px;display: flex;justify-content: flex-end;"><button style="background: none; border: none;">
+                     <a href=${url} target="_blank" style="color: #62B0FF">
+                         ${contact?.id ? formatMessage({ id: 'home.detail' }) : formatMessage({ id: 'home.edit' })}
+                     </a>
+                 </button></div>`;
 
             console.log('displayNotification');
 
@@ -176,7 +156,7 @@ const HomePage: React.FC<HomeProps> = (props) => {
                 notificationBody: getNotificationBody(body),
             })
         })
-    }, [tokenInfo, host, showConfig]);
+    }, [tokenInfo, host, showConfig, callState]);
 
     return (
         <>
@@ -197,6 +177,7 @@ export default connect(
         tokenInfo: global.tokenInfo,
         host: global.host,
         showConfig: global.showConfig,
+        callState: global.callState,
     }),
     (dispatch: Dispatch) => ({
         getContact: (payload: LooseObject) => dispatch({

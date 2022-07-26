@@ -7,7 +7,7 @@ export default {
     "login.client_secret.error": "Please enter client secret",
     "login.code": "Authorization Code",
     "login.code.error": "Please enter authorization code",
-    "login.identity.uthorization": "Identity Authorization",
+    "login.identity.authorization": "Identity Authorization",
     "login.submit.btn": "Log in",
     "login.remember": "Remember",
     "login.user.guide": "Wave CRM User Guide",

@@ -78,11 +78,24 @@ const IndexPage: React.FC<AuthProps> = (props) => {
      * @param {Object} userConfig 配置信息
      */
     const getUserInfo = (userConfig: LooseObject) => {
-        getUser(userConfig).then(res => {
+        const config = {
+            ...userConfig,
+            tokenInfo: userConfig.tokenInfo ?? {
+                ...userConfig,
+            },
+            showConfig: userConfig.showConfig ?? {
+                first: 'Name',
+                second: 'Phone',
+                third: 'None',
+                forth: 'None',
+                fifth: 'None',
+            }
+        }
+        getUser(config).then(res => {
             if (res?.id) {
                 // 获取token成功，保存token信息
-                saveUserConfig(userConfig);
-                save(userConfig);
+                saveUserConfig(config);
+                save(config);
                 history.replace({ pathname: '/home' });
             }
         });
@@ -154,13 +167,6 @@ const IndexPage: React.FC<AuthProps> = (props) => {
                     autoLogin: remember, // 自动登录
                     host,
                     uploadCall: true, // 上报通话
-                    showConfig: {
-                        first: 'Name',
-                        second: 'Phone',
-                        third: 'None',
-                        forth: 'None',
-                        fifth: 'None',
-                    }
                 };
                 getUserInfo(userConfig);
             }
@@ -179,7 +185,7 @@ const IndexPage: React.FC<AuthProps> = (props) => {
                 setHost(userConfig.host)
                 sessionStorage.setItem(
                     SESSION_STORAGE_KEY.apiHost,
-                    userConfig.tokenInfo?.api_domain,
+                    userConfig.tokenInfo?.api_domain || userConfig.api_domain,
                 );
                 sessionStorage.setItem(
                     SESSION_STORAGE_KEY.token,
@@ -241,7 +247,7 @@ const IndexPage: React.FC<AuthProps> = (props) => {
                         </Form.Item>
                         <Form.Item>
                             <Button type="primary" htmlType="submit" loading={loginLoading}>
-                                {formatMessage({ id: 'login.identity.uthorization' })}
+                                {formatMessage({ id: 'login.identity.authorization' })}
                             </Button>
                         </Form.Item>
                     </Form>

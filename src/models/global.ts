@@ -4,13 +4,14 @@ import { REQUEST_CODE, SESSION_STORAGE_KEY, ZOHO_CONFIG } from '@/constant';
 import { getDeviceCode, getDeviceToken, getToken, getUser, revokeToken } from '@/services/global';
 
 export interface GlobalModelState {
-    user: LooseObject,
-    userConfig: LooseObject,
-    connectState: string,
-    showConfig: LooseObject,
-    tokenInfo: LooseObject,
-    uploadCall: boolean,
-    host: string,
+    user: LooseObject
+    userConfig: LooseObject
+    connectState: string
+    showConfig: LooseObject
+    tokenInfo: LooseObject
+    uploadCall: boolean
+    host: string
+    callState: Map<string, boolean>
 }
 
 export interface GlobalModelType {
@@ -41,6 +42,7 @@ const GlobalModal: GlobalModelType = {
         tokenInfo: {},
         uploadCall: true,
         host: '',
+        callState: new Map(),
     },
 
     effects: {
@@ -159,7 +161,7 @@ const GlobalModal: GlobalModelType = {
         * saveUserConfig({ payload }, { put }) {
             console.log(payload);
             // @ts-ignore
-            pluginSDK.userConfig.addUserConfig({ userConfig: JSON.stringify(payload) }, function ({ errorCode }: {errorCode: number}) {
+            pluginSDK.userConfig.addUserConfig({ userConfig: JSON.stringify(payload) }, function ({ errorCode }: { errorCode: number }) {
                 console.log(errorCode);
             })
             yield put({

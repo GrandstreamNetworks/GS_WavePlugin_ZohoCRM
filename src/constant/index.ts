@@ -1,17 +1,17 @@
 const ZOHO_CONFIG = {
     client_id: {
-        US: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        CN: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        EU: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        IN: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        AU: 'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        US: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
+        CN: '1004.OGQ8QSHDINMK0XFEH3LOSS0C9WW6KI',
+        EU: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
+        IN: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
+        AU: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
     },
     client_secret: {
-        US: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        CN: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        EU: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        IN: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        AU: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        US: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
+        CN: '635fd7aac6c4fa82396ce0032c11fa8ad4062c9e7e',
+        EU: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
+        IN: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
+        AU: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
     },
     scope: 'ZohoCRM.modules.ALL,ZohoCRM.settings.ALL,ZohoCRM.users.ALL',
 }

@@ -34,7 +34,7 @@ const HomeModal: HomeModelType = {
                         data: {
                             refresh_token: payload.refresh_token,
                             client_id: get(ZOHO_CONFIG, ['client_id', payload.host]),
-                                client_secret: get(ZOHO_CONFIG, ['client_secret', payload.host]),
+                            client_secret: get(ZOHO_CONFIG, ['client_secret', payload.host]),
                             grant_type: 'refresh_token',
                         }
                     }
