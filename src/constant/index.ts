@@ -1,19 +1,19 @@
 const ZOHO_CONFIG = {
     client_id: {
-        US: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
-        CN: '1004.OGQ8QSHDINMK0XFEH3LOSS0C9WW6KI',
-        EU: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
-        IN: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
-        AU: '1004.11V78VI9SR692N7WFB2S5Y0CCO3GMD',
+        US: '1004.UGZGSBVOESHGPGPPGAQDG23B3GFRZD',
+        CN: '1004.MWMMQWUP5EMH0ACILUK1X7JDQ1H9FX',
+        EU: '1004.UGZGSBVOESHGPGPPGAQDG23B3GFRZD',
+        IN: '1004.UGZGSBVOESHGPGPPGAQDG23B3GFRZD',
+        AU: '1004.UGZGSBVOESHGPGPPGAQDG23B3GFRZD',
     },
     client_secret: {
-        US: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
-        CN: '635fd7aac6c4fa82396ce0032c11fa8ad4062c9e7e',
-        EU: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
-        IN: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
-        AU: '947e57aaa187dc27404ec7c359b86a64af42cd0629',
+        US: '040c7f8e3bcdfddc808138e01cde51b5ef090b8b35',
+        CN: '97260f9164509d9c78431c6061b2b001eb9cc295f7',
+        EU: '040c7f8e3bcdfddc808138e01cde51b5ef090b8b35',
+        IN: '040c7f8e3bcdfddc808138e01cde51b5ef090b8b35',
+        AU: '040c7f8e3bcdfddc808138e01cde51b5ef090b8b35',
     },
-    scope: 'ZohoCRM.modules.ALL,ZohoCRM.settings.ALL,ZohoCRM.users.ALL',
+    scope: 'ZohoCRM.modules.ALL,ZohoCRM.settings.ALL,ZohoCRM.users.ALL,ZohoCRM.coql.READ',
 }
 
 /**
@@ -107,6 +107,7 @@ const EVENT_KEY = {
     initP2PCall: 'onInitP2PCall', // wave发去呼叫
     p2PCallCanceled: 'onP2PCallCanceled', // 未接来电、去电
     initPluginWindowOk: 'onInitPluginWindowOk', //初始化窗口成功
+    onViewCustomerInfos: 'onViewCustomerInfos' // 收到客户信息
 };
 
 const WAVE_CALL_TYPE = {
@@ -120,6 +121,7 @@ const DATE_FORMAT = {
     format_2: 'YYYY/MM/DD HH/mm/ss',
     format_3: 'YYYY-MM-DD HH-mm-ss',
     format_4: 'YYYY-MM-DDTHH:mm:ss+ssK',
+    format_5: 'HH:mm:ss'
 };
 
 const MODULES = {
@@ -155,25 +157,47 @@ const CONFIG_SHOW: CONFIG_SHOW = {
 }
 
 const NotificationConfig = {
-    first: 'information 1',
-    second: 'information 2',
-    third: 'information 3',
-    forth: 'information 4',
-    fifth: 'information 5'
+    first: 'Information 1',
+    second: 'Information 2',
+    third: 'Information 3',
+    forth: 'Information 4',
+    fifth: 'Information 5'
 }
 
+const NOTIFICATION_CONFIG_DEF = {
+    first: 'Name',
+    second: 'Phone',
+    third: 'None',
+    forth: 'None',
+    fifth: 'None',
+}
+
+const AUTO_CREATE_CONFIG_DEF = {
+    numberType: 'Wave',
+    direction: 'All',
+    entityType: 'Contact',
+    firstName: 'Wave [Number]',
+    lastName: 'New',
+}
+
+const UPLOAD_CALL_CONFIG_DEF = {
+    subject: 'Wave PhoneSystem Call',
+    Inbound: '[DateTime]: Incoming call from [Number] [Name] to [Agent]([Duration])',
+    Missed: '[DateTime]: Missed call from [Number] [Name] to [Agent]',
+    Outbound: '[DateTime]: Outgoing call from [Agent] to [Number] [Name] ([Duration])',
+    unansweredOutbound: '[DateTime]: Unanswered outgoing call from [Agent] to [Number] [Name]'
+}
+
+const CREATION_CONFIG_CONTACT_TYPE = [
+    'Contact', 'Lead', 'Account'
+]
+
 export {
-    CONFIG_SHOW,
-    NotificationConfig,
-    ZOHO_CONFIG,
+    AUTO_CREATE_CONFIG_DEF, CONFIG_SHOW, CREATION_CONFIG_CONTACT_TYPE, DATE_FORMAT, EVENT_KEY, GLOBAL_MESSAGE, MODULES,
+    NOTIFICATION_CONFIG_DEF, NotificationConfig, REQUEST_CODE,
+    SESSION_STORAGE_KEY, UPLOAD_CALL_CONFIG_DEF, WAVE_CALL_TYPE, ZOHO_CONFIG,
     ZOHO_CRM,
     ZOHO_CRM_ADDRESS,
-    ZOHO_HOST,
-    GLOBAL_MESSAGE,
-    REQUEST_CODE,
-    SESSION_STORAGE_KEY,
-    EVENT_KEY,
-    WAVE_CALL_TYPE,
-    DATE_FORMAT,
-    MODULES,
+    ZOHO_HOST
 };
+

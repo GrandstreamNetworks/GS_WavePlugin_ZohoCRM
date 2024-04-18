@@ -1,9 +1,9 @@
 export default {
     "home.detail": "Details",
     "home.edit": "Add Contact",
-    "home.logged":"has logged in",
-    "home.Synchronize":"Sync Wave call history to CRM system",
-    "home.toCRM": "Go to ZohoCRM",
+    "home.logged": "has logged in",
+    "home.Synchronize": "Synchronize Wave Call Records to CRM System",
+    "home.toCRM": "Go to Zoho CRM",
     "home.connectError": "Server disconnected",
     "home.invalidToken": "No permission",
     "home.connection.exception": "Network error",

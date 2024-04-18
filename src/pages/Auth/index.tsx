@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Checkbox, Form, Image, Select } from 'antd';
-import { connect, Dispatch, history, Loading, useIntl } from 'umi';
-import { get } from 'lodash';
-import { REQUEST_CODE, SESSION_STORAGE_KEY, ZOHO_CONFIG, ZOHO_HOST } from '@/constant';
 import { CountdownButton, Footer } from '@/components';
-import SelectIcon from '../../asset/login/service-line.svg';
-import DownIcon from '../../asset/login/down.svg';
+import { AUTO_CREATE_CONFIG_DEF, NOTIFICATION_CONFIG_DEF, REQUEST_CODE, SESSION_STORAGE_KEY, UPLOAD_CALL_CONFIG_DEF, ZOHO_CONFIG, ZOHO_HOST } from '@/constant';
+import { Button, Checkbox, Form, Image, Select, message } from 'antd';
+import { get } from 'lodash';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Dispatch, Loading, connect, history, useIntl } from 'umi';
 import Change from '../../asset/login/change.svg';
+import DownIcon from '../../asset/login/down.svg';
+import SelectIcon from '../../asset/login/service-line.svg';
 import styles from './index.less';
 
 const { Option } = Select;
@@ -16,7 +16,6 @@ interface AuthProps {
     getDeviceToken: (obj: LooseObject) => Promise<LooseObject>;
     getUser: (obj: LooseObject) => Promise<LooseObject>;
     saveUserConfig: (obj: LooseObject) => void;
-    save: (obj: LooseObject) => void;
     loginLoading: boolean | undefined
 }
 
@@ -32,16 +31,16 @@ const IndexPage: React.FC<AuthProps> = (props) => {
         getDeviceToken,
         getUser,
         saveUserConfig,
-        save,
         loginLoading
     } = props;
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [remember, setRemember] = useState<boolean>(true);
     const [showTime, setShowTime] = useState<boolean>(false);
     const [loginState, setLoginState] = useState<boolean>(false);
-    const [host, setHost] = useState<string>('');
+    const [host, setHost] = useState<string>('US');
     const [form] = Form.useForm();
     const code = useRef(null);
+    const userConfig = useRef<LooseObject>({});
 
     const { formatMessage } = useIntl();
 
@@ -75,28 +74,34 @@ const IndexPage: React.FC<AuthProps> = (props) => {
 
     /**
      * 获取用户信息
-     * @param {Object} userConfig 配置信息
+     * @param {Object} values 配置信息
      */
-    const getUserInfo = (userConfig: LooseObject) => {
-        const config = {
-            ...userConfig,
-            tokenInfo: userConfig.tokenInfo ?? {
-                ...userConfig,
-            },
-            showConfig: userConfig.showConfig ?? {
-                first: 'Name',
-                second: 'Phone',
-                third: 'None',
-                forth: 'None',
-                fifth: 'None',
-            }
-        }
-        getUser(config).then(res => {
+    const getUserInfo = (values: LooseObject) => {
+        // @ts-ignore
+        pluginSDK.log.log("getUserInfo");
+        getUser(values).then(res => {
+            // @ts-ignore
+            pluginSDK.log.log(`getUser: ${JSON.stringify(res)}`);
             if (res?.id) {
                 // 获取token成功，保存token信息
+                const config = {
+                    ...values,
+                    tokenInfo: values.tokenInfo ?? {
+                        ...values,
+                    },
+                    uploadCall: values.uploadCall ?? true,
+                    notification: values.notification ?? true,
+                    autoCreate: values.autoCreate ?? false,
+                    autoCreateConfig: values.autoCreateConfig ?? AUTO_CREATE_CONFIG_DEF,
+                    uploadCallConfig: values.uploadCallConfig ?? UPLOAD_CALL_CONFIG_DEF,
+                    notificationConfig: values.notificationConfig ?? NOTIFICATION_CONFIG_DEF,
+                }
                 saveUserConfig(config);
-                save(config);
                 history.replace({ pathname: '/home' });
+            }
+            else {
+                message.error('login failure.').then();
+                setLoginState(false);
             }
         });
     }
@@ -106,6 +111,8 @@ const IndexPage: React.FC<AuthProps> = (props) => {
      * 发送权限申请，获取用户授权URL
      */
     const login = () => {
+        // @ts-ignore
+        pluginSDK.log.log("login");
         // 立即关闭倒计时
         setShowTime(false);
         getDeviceCode({
@@ -117,6 +124,8 @@ const IndexPage: React.FC<AuthProps> = (props) => {
                 access_type: 'offline',
             }
         }).then(res => {
+            // @ts-ignore
+            pluginSDK.log.log(`getDeviceCode ${JSON.stringify(res)}`);
             console.log(res);
             if (res?.code === REQUEST_CODE.connectError) {
                 setErrorMessage('error.network');
@@ -141,6 +150,8 @@ const IndexPage: React.FC<AuthProps> = (props) => {
      * 授权后，获取token 信息
      */
     const loginImmediately = useCallback(() => {
+        // @ts-ignore
+        pluginSDK.log.log("loginImmediately");
         getDeviceToken({
             host,
             data: {
@@ -150,6 +161,8 @@ const IndexPage: React.FC<AuthProps> = (props) => {
                 code: code.current,
             }
         }).then(tokenInfo => {
+            // @ts-ignore
+            pluginSDK.log.log(`loginImmediately${JSON.stringify(tokenInfo)}`);
             if (tokenInfo.error) {
                 if (tokenInfo.error === 'access_denied' || tokenInfo.error === 'expired') {
                     setLoginState(false);
@@ -162,13 +175,17 @@ const IndexPage: React.FC<AuthProps> = (props) => {
                 }
             }
             if (tokenInfo.access_token) {
-                const userConfig = {
+                const config = {
                     tokenInfo,
                     autoLogin: remember, // 自动登录
                     host,
-                    uploadCall: true, // 上报通话
                 };
-                getUserInfo(userConfig);
+                // @ts-ignore
+                pluginSDK.log.log(JSON.stringify(userConfig));
+                getUserInfo({
+                    ...userConfig.current,
+                    ...config
+                });
             }
         })
     }, [host, remember]);
@@ -179,20 +196,62 @@ const IndexPage: React.FC<AuthProps> = (props) => {
         pluginSDK.userConfig.getUserConfig(function ({ errorCode, data, }: { errorCode: number, data: string }) {
             console.log(errorCode, data);
             if (errorCode === 0 && data) {
-                const userConfig = JSON.parse(data);
+                const userInfo = JSON.parse(data);
+                form.setFieldsValue({ host: userInfo.host })
+                userConfig.current = userInfo;
+                setHost(userInfo.host)
 
-                form.setFieldsValue({ host: userConfig.host })
-                setHost(userConfig.host)
+                // 已登录的与预装配置进行对比
+                let sameConfig = true;
+
+                // 有预装配置 走预装配置
+                const preParamObjectStr = sessionStorage.getItem('preParamObject');
+                if (preParamObjectStr) {
+                    const preParamObject = JSON.parse(sessionStorage.getItem('preParamObject') || '');
+                    if (preParamObject) {
+                        Object.keys(preParamObject).forEach(item => {
+                            if (item.toLowerCase() !== 'host') {
+                                return
+                            }
+                            if (!Object.keys(ZOHO_HOST).includes(preParamObject[item])) {
+                                return
+                            }
+                            form.setFieldsValue({ host: preParamObject[item] })
+                            setHost(preParamObject[item])
+                            sameConfig = preParamObject[item] === userInfo.host;
+                        })
+                    }
+                }
                 sessionStorage.setItem(
                     SESSION_STORAGE_KEY.apiHost,
-                    userConfig.tokenInfo?.api_domain || userConfig.api_domain,
+                    userInfo.tokenInfo?.api_domain || userInfo.api_domain,
                 );
                 sessionStorage.setItem(
                     SESSION_STORAGE_KEY.token,
-                    userConfig.tokenInfo?.access_token,
+                    userInfo.tokenInfo?.access_token,
                 );
-                if (userConfig.autoLogin) {
-                    getUserInfo(userConfig);
+                if (userInfo.autoLogin && sameConfig) {
+                    getUserInfo(userInfo);
+                }
+            }
+            else {
+                // 有预装配置 走预装配置
+                const preParamObjectStr = sessionStorage.getItem('preParamObject');
+                if (!preParamObjectStr) {
+                    return;
+                }
+                const preParamObject = JSON.parse(preParamObjectStr);
+                if (preParamObject) {
+                    Object.keys(preParamObject).forEach(item => {
+                        if (item.toLowerCase() !== 'host') {
+                            return
+                        }
+                        if (!Object.keys(ZOHO_HOST).includes(preParamObject[item])) {
+                            return
+                        }
+                        form.setFieldsValue({ host: preParamObject[item] })
+                        setHost(preParamObject[item])
+                    })
                 }
             }
         });
@@ -303,9 +362,5 @@ export default connect(
                 type: 'global/saveUserConfig',
                 payload,
             }),
-        save: (payload: LooseObject) => dispatch({
-            type: 'global/save',
-            payload
-        })
     }),
 )(IndexPage);

@@ -1,17 +1,14 @@
-import { get } from 'lodash';
-import { Effect, history, Reducer } from 'umi';
 import { REQUEST_CODE, SESSION_STORAGE_KEY, ZOHO_CONFIG } from '@/constant';
 import { getDeviceCode, getDeviceToken, getToken, getUser, revokeToken } from '@/services/global';
+import { get } from 'lodash';
+import { Effect, Reducer, history } from 'umi';
 
 export interface GlobalModelState {
     user: LooseObject
     userConfig: LooseObject
     connectState: string
-    showConfig: LooseObject
     tokenInfo: LooseObject
-    uploadCall: boolean
     host: string
-    callState: Map<string, boolean>
 }
 
 export interface GlobalModelType {
@@ -23,8 +20,7 @@ export interface GlobalModelType {
         getDeviceCode: Effect
         getDeviceToken: Effect
         saveUserConfig: Effect
-        uploadCallChange: Effect
-        saveShowConfig: Effect
+        userConfigChange: Effect
         logout: Effect
     }
     reducers: {
@@ -38,16 +34,15 @@ const GlobalModal: GlobalModelType = {
         user: {},
         userConfig: {},
         connectState: 'SUCCESS',
-        showConfig: {},
         tokenInfo: {},
-        uploadCall: true,
         host: '',
-        callState: new Map(),
     },
 
     effects: {
         * getUser({ payload }, { call, put }) {
             let res = yield call(getUser);
+            // @ts-ignore
+            pluginSDK.log.log(`getUser===> ${JSON.stringify(res)}`);
             if (res?.status === REQUEST_CODE.noAuthority) {
                 const getToken = yield put({
                     type: 'getToken',
@@ -88,6 +83,8 @@ const GlobalModal: GlobalModelType = {
 
         * getToken({ payload }, { call, put }) {
             const res = yield call(getToken, payload);
+            // @ts-ignore
+            pluginSDK.log.log(`getToken===> ${JSON.stringify(res)}`);
             let connectState = res?.code || 'SUCCESS';
             yield put({
                 type: 'save',
@@ -105,13 +102,14 @@ const GlobalModal: GlobalModelType = {
 
         * getDeviceToken({ payload }, { call }) {
             const res = yield call(getDeviceToken, payload);
+            // @ts-ignore
+            pluginSDK.log.log(`getDeviceToken===> ${JSON.stringify(res)}`);
             if (res?.access_token) {
                 sessionStorage.setItem(SESSION_STORAGE_KEY.apiHost, get(res, 'api_domain'));
                 sessionStorage.setItem(SESSION_STORAGE_KEY.token, res.access_token,);
             }
             return res || {};
         },
-
 
         * logout(_, { call, put, select }) {
             const { userConfig } = yield select((state: any) => state.global);
@@ -127,41 +125,24 @@ const GlobalModal: GlobalModelType = {
             history.replace({ pathname: 'auth' })
         },
 
-        * uploadCallChange({ payload }, { put, select }) {
+        * userConfigChange({ payload }, { put, select }) {
             const { userConfig } = yield select((state: any) => state.global);
-            userConfig.uploadCall = payload;
+            const newConfig = {
+                ...userConfig,
+                ...payload,
+            }
             yield put({
                 type: 'saveUserConfig',
-                payload: userConfig,
-            })
-            yield put({
-                type: 'save',
-                payload: {
-                    uploadCall: payload,
-                }
-            })
-        },
-
-        * saveShowConfig({ payload }, { put, select }) {
-            const { userConfig } = yield select((state: any) => state.global);
-            console.log(userConfig);
-            userConfig.showConfig = payload;
-            yield put({
-                type: 'saveUserConfig',
-                payload: userConfig,
-            })
-            yield put({
-                type: 'save',
-                payload: {
-                    showConfig: payload,
-                }
+                payload: newConfig,
             })
         },
 
         * saveUserConfig({ payload }, { put }) {
             console.log(payload);
             // @ts-ignore
-            pluginSDK.userConfig.addUserConfig({ userConfig: JSON.stringify(payload) }, function ({ errorCode }: { errorCode: number }) {
+            pluginSDK.userConfig.addUserConfig({ userConfig: JSON.stringify(payload) }, function ({ errorCode }: {
+                errorCode: number
+            }) {
                 console.log(errorCode);
             })
             yield put({
